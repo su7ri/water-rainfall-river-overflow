@@ -26,6 +26,22 @@ How does rainfall drive river flow in the South West, and how closely do storm-o
 ![Next-day flow forecast](images/forecast.png)
 ![Overflow events vs rainfall](images/edm_vs_rain.png)
 
+## Power BI dashboard
+A six-page report built on the exported tables (star schema: `dim_date`, `dim_station`, `fact_daily_readings`, `fact_edm_events`, `fact_edm_daily`) with DAX measures. Download [`powerbi/water_dashboard.pbix`](powerbi/water_dashboard.pbix) (Power BI Desktop) or open the [PDF export](powerbi/water_dashboard.pdf).
+
+| Page | What it shows |
+|---|---|
+| Overview | Annual rainfall, Exe and Fal flow, headline numbers, year and season filters |
+| Rain to River | Daily rain against Exe flow; 14-day rainfall against flow with a trend line |
+| Low Flow | Days below the long-run 10th-percentile flow, by year (2022, 2018, 2025 stand out) |
+| Storm Overflows 2025 | Overflow events against 2-day rain, wet-day vs dry-day averages (about 6.4 times), top 10 sites by discharge hours |
+| Data Quality | Reading quality by station, share not rated Good, excluded long events |
+| Method and Limits | Sources, cleaning decisions and limitations |
+
+![Overview](powerbi/screenshots/pbi_1_overview.png)
+![Rain to River](powerbi/screenshots/pbi_2_rain_to_river.png)
+![Storm overflows](powerbi/screenshots/pbi_4_storm_overflows.png)
+
 ## Data quality (what I found and how I handled it)
 - One flow series had **duplicate daily readings** for a year (two per day); kept the 09:00 reading for consistency with all other stations.
 - **10.7% of readings** are Suspect, Estimated or Unchecked: kept but flagged; the rainfall index excludes Suspect readings.
@@ -40,11 +56,12 @@ Correlation is not causation. One flow catchment is modelled. The overflow data 
 - `water_rainfall_river_overflow.ipynb`: full analysis (data download, cleaning, QA, modelling, SQL, export)
 - `sql/analysis.sql`: the 11 SQL queries used in the notebook
 - `images/`: charts used above
+- `powerbi/`: Power BI report (`.pbix`), PDF export and page screenshots
 
 ## Run it
 Click the Colab badge, then **Runtime → Restart session and run all**. Rainfall and flow download automatically from the Hydrology API. If the automatic download of the overflow file fails, download `South West Water 2025 Detailed EDM Data.csv` from the data.gov.uk link above and upload it when the notebook asks.
 
 ## Next steps
-More catchments and years of overflow data; discharge duration per site as the impact measure; gradient-boosted and probabilistic flow forecasts; linking sites to receiving waters; a Power BI report on the exported tables.
+More catchments and years of overflow data; discharge duration per site as the impact measure; gradient-boosted and probabilistic flow forecasts; linking sites to receiving waters.
 
 *Contains public sector information licensed under the Open Government Licence v3.0.*
