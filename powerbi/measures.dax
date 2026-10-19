@@ -1,0 +1,90 @@
+// ===== Paste each measure into a new measure on table fact_daily_readings (or a table called _Measures) =====
+
+// --- Rainfall ---
+Rain Mean Daily (mm) =
+CALCULATE (
+    AVERAGE ( fact_daily_readings[value] ),
+    dim_station[measure] = "Rainfall",
+    fact_daily_readings[quality] <> "Suspect"      // conservative: ignore Suspect readings
+)
+
+Rain Total (mm) =
+SUMX ( VALUES ( dim_date[date] ), [Rain Mean Daily (mm)] )   // sum of daily regional means
+
+Rain 2 Days (mm) =
+VAR _d = MAX ( dim_date[date] )
+RETURN
+CALCULATE (
+    [Rain Total (mm)],
+    DATESINPERIOD ( dim_date[date], _d, -2, DAY )
+)
+
+Rain 14 Days (mm) =
+VAR _d = MAX ( dim_date[date] )
+RETURN
+CALCULATE ( [Rain Total (mm)], DATESINPERIOD ( dim_date[date], _d, -14, DAY ) )
+
+// --- River flow ---
+Exe Flow (m3/s) =
+CALCULATE ( AVERAGE ( fact_daily_readings[value] ), dim_station[station] = "Exe_Thorverton" )
+
+Fal Flow (m3/s) =
+CALCULATE ( AVERAGE ( fact_daily_readings[value] ), dim_station[station] = "Fal_Trenowth" )
+
+Exe Peak Flow (m3/s) =
+MAXX ( VALUES ( dim_date[date] ), [Exe Flow (m3/s)] )
+
+// --- Data quality ---
+Readings =
+COUNTROWS ( fact_daily_readings )
+
+Readings Not Good % =
+DIVIDE (
+    CALCULATE ( COUNTROWS ( fact_daily_readings ), fact_daily_readings[flag_suspect] = TRUE () ),
+    [Readings]
+)
+
+Missing Values =
+CALCULATE ( COUNTROWS ( fact_daily_readings ), ISBLANK ( fact_daily_readings[value] ) )
+
+// --- Storm overflow (EDM, 2025) ---
+EDM Events = SUM ( fact_edm_daily[events] )            // events <= 7 days only
+EDM Hours  = SUM ( fact_edm_daily[discharge_hours] )
+Active Sites = MAX ( fact_edm_daily[sites_active] )
+
+EDM Events Excluded (>7 days) =
+CALCULATE ( COUNTROWS ( fact_edm_events ), fact_edm_events[too_long] = TRUE () )
+
+Wet Day (>=10mm in 2 days) =
+IF ( [Rain 2 Days (mm)] >= 10, 1, 0 )
+
+Avg Events Wet Days =
+AVERAGEX ( FILTER ( VALUES ( dim_date[date] ), [Rain 2 Days (mm)] >= 10 ), [EDM Events] )
+
+Avg Events Dry Days =
+AVERAGEX ( FILTER ( VALUES ( dim_date[date] ), [Rain 2 Days (mm)] < 10 ), [EDM Events] )
+
+Wet vs Dry Ratio =
+DIVIDE ( [Avg Events Wet Days], [Avg Events Dry Days] )
+
+// --- Low flow (water-resources angle) ---
+// Long-run 10th percentile of Exe daily flow (all years, ignores date filters)
+Exe P10 Threshold (m3/s) =
+PERCENTILEX.INC (
+    FILTER (
+        ALL ( fact_daily_readings ),
+        fact_daily_readings[station] = "Exe_Thorverton" && NOT ISBLANK ( fact_daily_readings[value] )
+    ),
+    fact_daily_readings[value],
+    0.1
+)
+
+Low Flow Days =
+VAR _t = [Exe P10 Threshold (m3/s)]
+RETURN
+CALCULATE (
+    COUNTROWS ( fact_daily_readings ),
+    fact_daily_readings[station] = "Exe_Thorverton",
+    fact_daily_readings[value] <= _t
+)
+// Expected by year: 2015=6, 2016=12, 2017=7, 2018=81, 2019=19, 2020=33, 2021=12, 2022=133, 2023=19, 2024=15, 2025=65

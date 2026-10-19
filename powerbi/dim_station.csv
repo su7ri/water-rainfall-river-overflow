@@ -1,0 +1,10 @@
+station,station_name,measure,unit,river,lat,long
+Werrington_Park,Werrington Park,Rainfall,mm/day,,50.660364,-4.359361
+Hemyock,Hemyock,Rainfall,mm/day,,50.909002,-3.22699
+Tiverton,Tiverton,Rainfall,mm/day,,50.884147,-3.488185
+Ashcombe,Ashcombe,Rainfall,mm/day,,50.60161,-3.531044
+Bickington,Bickington,Rainfall,mm/day,,50.537963,-3.702646
+Bellever_Dartmoor,Bellever Dartmoor,Rainfall,mm/day,,,
+Roadford,Roadford,Rainfall,mm/day,,50.686463,-4.234015
+Exe_Thorverton,Exe Thorverton,River flow,m3/s,River Exe,,
+Fal_Trenowth,Fal Trenowth,River flow,m3/s,River Fal,,
